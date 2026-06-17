@@ -141,7 +141,7 @@ if st.session_state.page == 'home':
     * **Runway Selection:** Automatically calculates the best runway, headwind, and crosswind.
     * **Performance Interpolation:** Dynamically computes takeoff and landing distances.
     """)
-    st.error("**DISCLAIMER:** Please use only for Weight and Balance calculation of PA-28-161 at sea level only and assume original values greater than these.")
+    st.error("**DISCLAIMER:** Please use for Weight and Balance calculation of PA-28-161 at sea level only and assume original values greater than these.")
     
     st.markdown("---")
     st.subheader("⚖️ Enter Flight Parameters")
