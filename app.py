@@ -141,7 +141,7 @@ with st.sidebar:
 # --- UI: MAIN PAGE LOGIC ---
 if not submit_button:
     st.title("✈️ Welcome to the PA-28 Dispatch Tool")
-    st.info("👈 Please enter your current flight parameters in the sidebar and click **Calculate Dispatch**.")
+    st.info("👈 Please enter your current flight parameters in the sidebar (top left corner) and click **Calculate Dispatch**.")
     st.markdown("""
     ### Features included in your dispatch sheet:
     * **Weight & Balance:** Calculates Takeoff and Landing W&B against CG limits.
@@ -149,7 +149,7 @@ if not submit_button:
     * **Runway Selection:** Automatically calculates the best runway and headwind component.
     * **Performance Interpolation:** Dynamically computes takeoff and landing distances.
     """)
-    st.markdown("#### DISCLAIMER: Please use only for PA-28-161 at sea level only and assume original values greater than these")
+    st.markdown("##### DISCLAIMER: Please use only for PA-28-161 at sea level and assume original values greater than these")
 
 else:
     st.title("✈️ Pre-Flight Dispatch: Piper PA-28")
