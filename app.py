@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import numpy as np
 import pandas as pd
 import math
@@ -37,6 +38,18 @@ def go_home():
     st.session_state.page = 'home'
 
 # --- HELPER FUNCTIONS ---
+def scroll_to_top():
+    js = '''
+    <script>
+        var body = window.parent.document.querySelector(".main");
+        if (body) {
+            body.scrollTop = 0;
+        }
+        window.parent.scrollTo(0, 0);
+    </script>
+    '''
+    components.html(js, height=0)
+
 @st.cache_data(ttl=600)
 def fetch_metar():
     url = "https://aviationweather.gov/api/data/metar?ids=KVRB&format=raw"
@@ -132,6 +145,7 @@ def calculate_performance_metric(folder_path, takeoff_weight, temp, headwind):
 # --- UI: MAIN PAGE LOGIC ---
 
 if st.session_state.page == 'home':
+    scroll_to_top()
     st.title("✈️ Welcome to the PA-28 Dispatch Tool")
     
     st.markdown("""
@@ -141,7 +155,7 @@ if st.session_state.page == 'home':
     * **Runway Selection:** Automatically calculates the best runway, headwind, and crosswind.
     * **Performance Interpolation:** Dynamically computes takeoff and landing distances.
     """)
-    st.error("**DISCLAIMER:** Please use for Weight and Balance calculation of PA-28-161 at sea level only and assume original values greater than these.")
+    st.error("**DISCLAIMER:** Please use only for Weight and Balance calculation of PA-28-161 at sea level only and assume original values greater than these.")
     
     st.markdown("---")
     st.subheader("⚖️ Enter Flight Parameters")
@@ -159,7 +173,6 @@ if st.session_state.page == 'home':
         submit_button = st.form_submit_button("Calculate Dispatch", type="primary")
         
         if submit_button:
-            # Save variables to session state so they persist on the next page
             st.session_state.ew = empty_weight
             st.session_state.pw = pilot_weight
             st.session_state.iw = instructor_weight
@@ -169,6 +182,7 @@ if st.session_state.page == 'home':
             st.rerun()
 
 elif st.session_state.page == 'results':
+    scroll_to_top()
     st.title("✈️ Pre-Flight Dispatch: Piper PA-28")
 
     # ---- ARM LOCATIONS & MATH ----
@@ -285,6 +299,4 @@ elif st.session_state.page == 'results':
             st.error(f"⚠️ Performance calculation error: {e}")
 
     st.markdown("---") 
-    
-    # Navigation button back to Home Page
     st.button("🔙 Back to Home Page", on_click=go_home, type="primary")
