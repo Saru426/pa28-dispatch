@@ -1,6 +1,5 @@
 import streamlit as st
 import streamlit.components.v1 as components
-import streamlit.components.v1 as components
 import numpy as np
 import pandas as pd
 import math
@@ -25,26 +24,8 @@ if 'page' not in st.session_state:
 
 def go_home():
     st.session_state.page = 'home'
-# --- SESSION STATE INITIALIZATION ---
-if 'page' not in st.session_state:
-    st.session_state.page = 'home'
-
-def go_home():
-    st.session_state.page = 'home'
 
 # --- HELPER FUNCTIONS ---
-def scroll_to_top():
-    js = '''
-    <script>
-        var body = window.parent.document.querySelector(".main");
-        if (body) {
-            body.scrollTop = 0;
-        }
-        window.parent.scrollTo(0, 0);
-    </script>
-    '''
-    components.html(js, height=0)
-
 def scroll_to_top():
     js = '''
     <script>
@@ -176,58 +157,12 @@ def calc_landing_obstacle(weight, temp, headwind):
     wind_slope = (-0.0047 * base_dist) - 11.6423
     return max(0, base_dist + (headwind * wind_slope))
 
-# =============================================================================
-# PIPER PA-28 EMPIRICAL PERFORMANCE ENGINES
-# =============================================================================
-
-def calc_flaps_0_ground_roll(weight, temp, headwind):
-    base_2400 = (0.0205 * (temp ** 2)) + (18.8268 * temp) + 782.8214
-    weight_ratio = (0.0000004932 * (weight ** 2)) - (0.001232 * weight) + 1.1184
-    base_dist = base_2400 * weight_ratio
-    wind_slope = (-0.0135 * base_dist) - 2.1047
-    return max(0, base_dist + (headwind * wind_slope))
-
-def calc_flaps_25_ground_roll(weight, temp, headwind):
-    base_2400 = (0.0080 * (temp ** 2)) + (13.7589 * temp) + 799.4643
-    weight_ratio = (0.0000002787 * (weight ** 2)) - (0.0004820 * weight) + 0.5508
-    base_dist = base_2400 * weight_ratio
-    wind_slope = (-0.0107 * base_dist) - 5.0694
-    return max(0, base_dist + (headwind * wind_slope))
-
-def calc_flaps_0_obstacle(weight, temp, headwind):
-    base_2400 = (0.0018 * (temp ** 2)) + (24.3607 * temp) + 1569.5000
-    weight_ratio = (0.0000002759 * (weight ** 2)) - (0.0002545 * weight) + 0.0235
-    base_dist = base_2400 * weight_ratio
-    wind_slope = (-0.0107 * base_dist) - 5.3652
-    return max(0, base_dist + (headwind * wind_slope))
-
-def calc_flaps_25_obstacle(weight, temp, headwind):
-    base_2400 = (-0.0500 * (temp ** 2)) + (25.4000 * temp) + 1254.0000
-    weight_ratio = (0.0000001896 * (weight ** 2)) - (0.00007642 * weight) + 0.0883
-    base_dist = base_2400 * weight_ratio
-    wind_slope = (-0.0109 * base_dist) - 4.7111
-    return max(0, base_dist + (headwind * wind_slope))
-
-def calc_landing_ground_roll(weight, temp, headwind):
-    base_2400 = (0.0046 * (temp ** 2)) + (1.8721 * temp) + 583.1857
-    weight_ratio = (0.0000000176 * (weight ** 2)) + (0.0003462 * weight) + 0.0668
-    base_dist = base_2400 * weight_ratio
-    wind_slope = (-0.0129 * base_dist) - 3.5358
-    return max(0, base_dist + (headwind * wind_slope))
-
-def calc_landing_obstacle(weight, temp, headwind):
-    base_2400 = (2.8714 * temp) + 1094.4286
-    weight_ratio = (-0.0000000392 * (weight ** 2)) + (0.0005736 * weight) - 0.1512
-    base_dist = base_2400 * weight_ratio
-    wind_slope = (-0.0047 * base_dist) - 11.6423
-    return max(0, base_dist + (headwind * wind_slope))
-
 
 # --- UI: MAIN PAGE LOGIC ---
 
 if st.session_state.page == 'home':
     scroll_to_top()
-    st.title("✈️ Weight & Balance")
+    st.title("✈️ PA-28 Dispatch Tool")
     
     st.markdown("""
     ### Features included in your dispatch sheet:
@@ -235,37 +170,7 @@ if st.session_state.page == 'home':
     * **Live Weather:** Pulls the current METAR for KVRB to determine temperature and winds.
     * **Runway Selection:** Automatically calculates the best runway, headwind, and crosswind.
     * **Performance Engines:** Dynamically computes takeoff and landing distances using empirical flight test polynomials.
-    * **Runway Selection:** Automatically calculates the best runway, headwind, and crosswind.
-    * **Performance Engines:** Dynamically computes takeoff and landing distances using empirical flight test polynomials.
     """)
-    st.error("**DISCLAIMER:** Please use only for Weight and Balance calculation of PA-28-161 at sea level only and assume original values greater than these.")
-    
-    st.markdown("---")
-    st.subheader("⚖️ Enter Flight Parameters")
-    
-    with st.form("dispatch_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            empty_weight = st.number_input("Aircraft empty weight (lbs):", min_value=1000.0, max_value=2000.0, value=1500.0, step=10.0)
-            pilot_weight = st.number_input("Pilot weight (lbs):", min_value=50.0, max_value=400.0, value=180.0, step=5.0)
-            instructor_weight = st.number_input("Instructor weight (lbs):", min_value=0.0, max_value=400.0, value=180.0, step=5.0)
-        with col2:
-            baggage_weight = st.number_input("Baggage weight (lbs) [0 if none]:", min_value=0.0, max_value=200.0, value=10.0, step=5.0)
-            lesson_hours = st.number_input("Est. flight duration (hours):", min_value=0.5, max_value=6.0, value=1.5, step=0.1)
-        
-        submit_button = st.form_submit_button("Calculate Dispatch", type="primary")
-        
-        if submit_button:
-            st.session_state.ew = empty_weight
-            st.session_state.pw = pilot_weight
-            st.session_state.iw = instructor_weight
-            st.session_state.bw = baggage_weight
-            st.session_state.lh = lesson_hours
-            st.session_state.page = 'results'
-            st.rerun()
-
-elif st.session_state.page == 'results':
-    scroll_to_top()
     st.error("**DISCLAIMER:** Please use only for Weight and Balance calculation of PA-28-161 at sea level only and assume original values greater than these.")
     
     st.markdown("---")
@@ -301,18 +206,14 @@ elif st.session_state.page == 'results':
     baggage_arm, fuel_arm = 142.8, 95.0
 
     fuel_burn = st.session_state.lh * (11.4 * 6)
-    fuel_burn = st.session_state.lh * (11.4 * 6)
     fuel_weight = 48 * 6
 
-    takeoff_weight = (st.session_state.ew + st.session_state.pw + st.session_state.iw + st.session_state.bw + fuel_weight) - 8
     takeoff_weight = (st.session_state.ew + st.session_state.pw + st.session_state.iw + st.session_state.bw + fuel_weight) - 8
     takeoff_fuel = fuel_weight - 8
     landing_weight = takeoff_weight - fuel_burn
     landing_fuel = takeoff_fuel - fuel_burn
 
     def get_cg(w_fuel, w_total):
-        return ((st.session_state.ew * empty_arm) + (st.session_state.pw * pilot_arm) + 
-                (st.session_state.iw * instructor_arm) + (st.session_state.bw * baggage_arm) + 
         return ((st.session_state.ew * empty_arm) + (st.session_state.pw * pilot_arm) + 
                 (st.session_state.iw * instructor_arm) + (st.session_state.bw * baggage_arm) + 
                 (w_fuel * fuel_arm)) / w_total
@@ -332,7 +233,6 @@ elif st.session_state.page == 'results':
             best_rwy, best_hw, best_xw = get_best_runway(all_rwy_winds, wind_speed)
         else:
             st.error("Failed to fetch METAR data for KVRB.")
-            st.button("🔙 Back to Home Page", on_click=go_home)
             st.button("🔙 Back to Home Page", on_click=go_home)
             st.stop()
 
@@ -380,15 +280,6 @@ elif st.session_state.page == 'results':
         st.subheader("🚀 3. Performance Data")
         
         try:
-            # Calling the new empirical math engines instead of parsing CSVs
-            perf_roll_0 = calc_flaps_0_ground_roll(takeoff_weight, temp, best_hw)
-            perf_obs_0 = calc_flaps_0_obstacle(takeoff_weight, temp, best_hw)
-            
-            perf_roll_25 = calc_flaps_25_ground_roll(takeoff_weight, temp, best_hw)
-            perf_obs_25 = calc_flaps_25_obstacle(takeoff_weight, temp, best_hw)
-            
-            perf_land_roll = calc_landing_ground_roll(landing_weight, temp, best_hw)
-            perf_land_obs = calc_landing_obstacle(landing_weight, temp, best_hw)
             # Calling the new empirical math engines instead of parsing CSVs
             perf_roll_0 = calc_flaps_0_ground_roll(takeoff_weight, temp, best_hw)
             perf_obs_0 = calc_flaps_0_obstacle(takeoff_weight, temp, best_hw)
