@@ -1,10 +1,10 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import numpy as np
 import pandas as pd
 import math
 import requests
 import re
-import os
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="PA-28 Pre-Flight Dispatch", page_icon="✈️", layout="wide")
@@ -12,25 +12,32 @@ st.set_page_config(page_title="PA-28 Pre-Flight Dispatch", page_icon="✈️", l
 # --- CUSTOM CSS TO TIGHTEN SPACING ---
 st.markdown("""
     <style>
-        /* Reduce padding around main blocks and headers */
         .block-container { padding-top: 2rem; padding-bottom: 2rem; }
         h1, h2, h3, h4 { margin-bottom: 0.2rem !important; padding-bottom: 0 !important; }
         p { margin-bottom: 0.5rem !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- MASTER PATHS ---
-base_piper_path = './Piper/' 
-paths = {
-    "roll_0": os.path.join(base_piper_path, 'Takeoff_Roll_0/'),
-    "obs_0": os.path.join(base_piper_path, 'Takeoff_Obstacle_0/'),
-    "roll_25": os.path.join(base_piper_path, 'Takeoff_Roll_25/'),
-    "obs_25": os.path.join(base_piper_path, 'Takeoff_Obstacle_25/'),
-    "land_roll": os.path.join(base_piper_path, 'Landing_Roll/'),        
-    "land_obs": os.path.join(base_piper_path, 'Landing_Obstacle_50/')   
-}
+# --- SESSION STATE INITIALIZATION ---
+if 'page' not in st.session_state:
+    st.session_state.page = 'home'
+
+def go_home():
+    st.session_state.page = 'home'
 
 # --- HELPER FUNCTIONS ---
+def scroll_to_top():
+    js = '''
+    <script>
+        var body = window.parent.document.querySelector(".main");
+        if (body) {
+            body.scrollTop = 0;
+        }
+        window.parent.scrollTo(0, 0);
+    </script>
+    '''
+    components.html(js, height=0)
+
 @st.cache_data(ttl=600)
 def fetch_metar():
     url = "https://aviationweather.gov/api/data/metar?ids=KVRB&format=raw"
@@ -61,7 +68,6 @@ def parse_metar_wind(wind_str):
     return int(wind_str[:3]), int(int(wind_str[3:]) * multiplier)
 
 def calculate_runway_winds(wind_dir, speed):
-    # Groups parallel runways together for a cleaner display
     runways = {"12L/R": 120, "30L/R": 300, "04": 40, "22": 220}
     results = []
     
@@ -83,7 +89,6 @@ def calculate_runway_winds(wind_dir, speed):
 def get_best_runway(runway_winds_list, speed):
     if speed == 0:
         return "12L/R", 0.0, 0.0
-    # Finds the runway with the highest headwind component
     best = max(runway_winds_list, key=lambda x: x["Headwind (kts)"])
     return best["Runway"], best["Headwind (kts)"], best["Crosswind (kts)"]
 
@@ -105,70 +110,112 @@ def cg_is_within_limits(takeoff_weight, cg):
     fwd, aft = limits[1], limits[2]
     return fwd, aft, fwd <= cg <= aft
 
-def calculate_performance_metric(folder_path, takeoff_weight, temp, headwind):
-    base_dir = folder_path.rstrip('/')
-    nearest_weight = min([2000, 2050, 2100, 2150, 2200, 2250, 2300, 2350, 2400], key=lambda x: abs(x - takeoff_weight))
-    weight_csv = os.path.join(base_dir, f"{nearest_weight} lbs.csv")
-    wind_csv = os.path.join(base_dir, "Winds.csv")
-    
-    if not os.path.exists(weight_csv) or not os.path.exists(wind_csv):
-        raise FileNotFoundError(f"Missing data in {base_dir}")
 
-    df_weight = pd.read_csv(weight_csv, header=None)
-    df_weight = df_weight.sort_values(by=0)
-    base_dist = np.interp(temp, df_weight.iloc[:, 0].values, df_weight.iloc[:, 1].values)
-    
-    df_wind = pd.read_csv(wind_csv)
-    ref_rolls = df_wind.iloc[:, 0].astype(float).values
-    slopes = df_wind.iloc[:, 2].astype(float).values
-    this_metric_slope = np.interp(base_dist, ref_rolls, slopes)
-    
-    return base_dist + (headwind * this_metric_slope)
+# =============================================================================
+# PIPER PA-28 EMPIRICAL PERFORMANCE ENGINES
+# =============================================================================
 
+def calc_flaps_0_ground_roll(weight, temp, headwind):
+    base_2400 = (0.0205 * (temp ** 2)) + (18.8268 * temp) + 782.8214
+    weight_ratio = (0.0000004932 * (weight ** 2)) - (0.001232 * weight) + 1.1184
+    base_dist = base_2400 * weight_ratio
+    wind_slope = (-0.0135 * base_dist) - 2.1047
+    return max(0, base_dist + (headwind * wind_slope))
 
-# --- UI: SIDEBAR FORM ---
-with st.sidebar:
-    st.header("⚖️ Load Sheet")
-    with st.form("dispatch_form"):
-        empty_weight = st.number_input("Aircraft empty weight (lbs):", min_value=1000.0, max_value=2000.0, value=1500.0, step=10.0)
-        pilot_weight = st.number_input("Pilot weight (lbs):", min_value=50.0, max_value=400.0, value=180.0, step=5.0)
-        instructor_weight = st.number_input("Instructor weight (lbs):", min_value=0.0, max_value=400.0, value=180.0, step=5.0)
-        baggage_weight = st.number_input("Baggage weight (lbs) [0 if none]:", min_value=0.0, max_value=200.0, value=10.0, step=5.0)
-        lesson_hours = st.number_input("Est. flight duration (hours):", min_value=0.5, max_value=6.0, value=1.5, step=0.1)
-        submit_button = st.form_submit_button("Calculate Dispatch")
+def calc_flaps_25_ground_roll(weight, temp, headwind):
+    base_2400 = (0.0080 * (temp ** 2)) + (13.7589 * temp) + 799.4643
+    weight_ratio = (0.0000002787 * (weight ** 2)) - (0.0004820 * weight) + 0.5508
+    base_dist = base_2400 * weight_ratio
+    wind_slope = (-0.0107 * base_dist) - 5.0694
+    return max(0, base_dist + (headwind * wind_slope))
+
+def calc_flaps_0_obstacle(weight, temp, headwind):
+    base_2400 = (0.0018 * (temp ** 2)) + (24.3607 * temp) + 1569.5000
+    weight_ratio = (0.0000002759 * (weight ** 2)) - (0.0002545 * weight) + 0.0235
+    base_dist = base_2400 * weight_ratio
+    wind_slope = (-0.0107 * base_dist) - 5.3652
+    return max(0, base_dist + (headwind * wind_slope))
+
+def calc_flaps_25_obstacle(weight, temp, headwind):
+    base_2400 = (-0.0500 * (temp ** 2)) + (25.4000 * temp) + 1254.0000
+    weight_ratio = (0.0000001896 * (weight ** 2)) - (0.00007642 * weight) + 0.0883
+    base_dist = base_2400 * weight_ratio
+    wind_slope = (-0.0109 * base_dist) - 4.7111
+    return max(0, base_dist + (headwind * wind_slope))
+
+def calc_landing_ground_roll(weight, temp, headwind):
+    base_2400 = (0.0046 * (temp ** 2)) + (1.8721 * temp) + 583.1857
+    weight_ratio = (0.0000000176 * (weight ** 2)) + (0.0003462 * weight) + 0.0668
+    base_dist = base_2400 * weight_ratio
+    wind_slope = (-0.0129 * base_dist) - 3.5358
+    return max(0, base_dist + (headwind * wind_slope))
+
+def calc_landing_obstacle(weight, temp, headwind):
+    base_2400 = (2.8714 * temp) + 1094.4286
+    weight_ratio = (-0.0000000392 * (weight ** 2)) + (0.0005736 * weight) - 0.1512
+    base_dist = base_2400 * weight_ratio
+    wind_slope = (-0.0047 * base_dist) - 11.6423
+    return max(0, base_dist + (headwind * wind_slope))
 
 
 # --- UI: MAIN PAGE LOGIC ---
-if not submit_button:
-    st.title("✈️ Welcome to the PA-28 Dispatch Tool")
-    st.info("👈 Please enter your current flight parameters in the sidebar (top left corner) and click **Calculate Dispatch**.")
+
+if st.session_state.page == 'home':
+    scroll_to_top()
+    st.title("✈️ Weight & Balance")
+    
     st.markdown("""
     ### Features included in your dispatch sheet:
     * **Weight & Balance:** Calculates Takeoff and Landing W&B against CG limits.
     * **Live Weather:** Pulls the current METAR for KVRB to determine temperature and winds.
-    * **Runway Selection:** Automatically calculates the best runway and headwind component.
-    * **Performance Interpolation:** Dynamically computes takeoff and landing distances.
+    * **Runway Selection:** Automatically calculates the best runway, headwind, and crosswind.
+    * **Performance Engines:** Dynamically computes takeoff and landing distances using empirical flight test polynomials.
     """)
-    st.markdown("##### DISCLAIMER: Please use only for PA-28-161 at sea level and assume original values greater than these")
+    st.error("**DISCLAIMER:** Please use only for Weight and Balance calculation of PA-28-161 at sea level only and assume original values greater than these.")
+    
+    st.markdown("---")
+    st.subheader("⚖️ Enter Flight Parameters")
+    
+    with st.form("dispatch_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            empty_weight = st.number_input("Aircraft empty weight (lbs):", min_value=1000.0, max_value=2000.0, value=1500.0, step=10.0)
+            pilot_weight = st.number_input("Pilot weight (lbs):", min_value=50.0, max_value=400.0, value=180.0, step=5.0)
+            instructor_weight = st.number_input("Instructor weight (lbs):", min_value=0.0, max_value=400.0, value=180.0, step=5.0)
+        with col2:
+            baggage_weight = st.number_input("Baggage weight (lbs) [0 if none]:", min_value=0.0, max_value=200.0, value=10.0, step=5.0)
+            lesson_hours = st.number_input("Est. flight duration (hours):", min_value=0.5, max_value=6.0, value=1.5, step=0.1)
+        
+        submit_button = st.form_submit_button("Calculate Dispatch", type="primary")
+        
+        if submit_button:
+            st.session_state.ew = empty_weight
+            st.session_state.pw = pilot_weight
+            st.session_state.iw = instructor_weight
+            st.session_state.bw = baggage_weight
+            st.session_state.lh = lesson_hours
+            st.session_state.page = 'results'
+            st.rerun()
 
-else:
+elif st.session_state.page == 'results':
+    scroll_to_top()
     st.title("✈️ Pre-Flight Dispatch: Piper PA-28")
 
     # ---- ARM LOCATIONS & MATH ----
     empty_arm, pilot_arm, instructor_arm = 86.28, 80.5, 80.5
     baggage_arm, fuel_arm = 142.8, 95.0
 
-    fuel_burn = lesson_hours * (11.4 * 6)
+    fuel_burn = st.session_state.lh * (11.4 * 6)
     fuel_weight = 48 * 6
 
-    takeoff_weight = (empty_weight + pilot_weight + instructor_weight + baggage_weight + fuel_weight) - 8
+    takeoff_weight = (st.session_state.ew + st.session_state.pw + st.session_state.iw + st.session_state.bw + fuel_weight) - 8
     takeoff_fuel = fuel_weight - 8
     landing_weight = takeoff_weight - fuel_burn
     landing_fuel = takeoff_fuel - fuel_burn
 
     def get_cg(w_fuel, w_total):
-        return ((empty_weight * empty_arm) + (pilot_weight * pilot_arm) + 
-                (instructor_weight * instructor_arm) + (baggage_weight * baggage_arm) + 
+        return ((st.session_state.ew * empty_arm) + (st.session_state.pw * pilot_arm) + 
+                (st.session_state.iw * instructor_arm) + (st.session_state.bw * baggage_arm) + 
                 (w_fuel * fuel_arm)) / w_total
 
     cg_to = get_cg(takeoff_fuel, takeoff_weight)
@@ -182,11 +229,11 @@ else:
             wind_dir, wind_speed = parse_metar_wind(wind_str)
             temp = extract_temperature_from_metar(metar)
             
-            # Calculate winds for all runways and identify the best one
             all_rwy_winds = calculate_runway_winds(wind_dir, wind_speed)
             best_rwy, best_hw, best_xw = get_best_runway(all_rwy_winds, wind_speed)
         else:
             st.error("Failed to fetch METAR data for KVRB.")
+            st.button("🔙 Back to Home Page", on_click=go_home)
             st.stop()
 
         # --- SECTION 1: WEATHER & RUNWAY ---
@@ -200,10 +247,8 @@ else:
         col4.metric("Headwind", f"{best_hw:.1f} kts")
         col5.metric("Crosswind", f"{best_xw:.1f} kts")
 
-        # Display the wind components for all runways
         st.markdown("**Wind Components by Runway:**")
         st.dataframe(pd.DataFrame(all_rwy_winds), use_container_width=True, hide_index=True)
-
         st.markdown("---")
 
         # --- SECTION 2: WEIGHT & BALANCE ---
@@ -235,12 +280,15 @@ else:
         st.subheader("🚀 3. Performance Data")
         
         try:
-            perf_roll_0 = calculate_performance_metric(paths["roll_0"], takeoff_weight, temp, best_hw)
-            perf_obs_0 = calculate_performance_metric(paths["obs_0"], takeoff_weight, temp, best_hw)
-            perf_roll_25 = calculate_performance_metric(paths["roll_25"], takeoff_weight, temp, best_hw)
-            perf_obs_25 = calculate_performance_metric(paths["obs_25"], takeoff_weight, temp, best_hw)
-            perf_land_roll = calculate_performance_metric(paths["land_roll"], landing_weight, temp, best_hw)
-            perf_land_obs = calculate_performance_metric(paths["land_obs"], landing_weight, temp, best_hw)
+            # Calling the new empirical math engines instead of parsing CSVs
+            perf_roll_0 = calc_flaps_0_ground_roll(takeoff_weight, temp, best_hw)
+            perf_obs_0 = calc_flaps_0_obstacle(takeoff_weight, temp, best_hw)
+            
+            perf_roll_25 = calc_flaps_25_ground_roll(takeoff_weight, temp, best_hw)
+            perf_obs_25 = calc_flaps_25_obstacle(takeoff_weight, temp, best_hw)
+            
+            perf_land_roll = calc_landing_ground_roll(landing_weight, temp, best_hw)
+            perf_land_obs = calc_landing_obstacle(landing_weight, temp, best_hw)
             
             perf_col1, perf_col2 = st.columns(2)
             
@@ -264,10 +312,8 @@ else:
                 - Over 50ft Obs: **{perf_land_obs:.0f} ft**
                 """)
 
-        except FileNotFoundError as e:
-            st.warning("⚠️ Performance data missing. Please ensure your CSV files are mapped correctly.")
         except Exception as e:
             st.error(f"⚠️ Performance calculation error: {e}")
 
     st.markdown("---") 
-    st.markdown("#### **Have a safe flight!** 🛩️")
+    st.button("🔙 Back to Home Page", on_click=go_home, type="primary")
