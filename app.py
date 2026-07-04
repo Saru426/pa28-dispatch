@@ -247,6 +247,14 @@ def calc_landing_obstacle(weight, temp, headwind):
     wind_slope = (-0.0047 * base_dist) - 11.6423
     return max(0, base_dist + (headwind * wind_slope))
 
+# --- FONT LOADER ---
+def get_font(size):
+    font_path = "Roboto-VariableFont_wdth,wght.ttf"
+    try: 
+        return ImageFont.truetype(font_path, size=size)
+    except Exception:
+        return ImageFont.load_default()
+
 # --- IMAGE GENERATOR ---
 def generate_dispatch_sheet(wb_data, perf_data, env_data):
     try:
@@ -255,11 +263,7 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
         return None
 
     draw = ImageDraw.Draw(img)
-    try:
-        font = ImageFont.truetype("Arial.ttf", size=65)
-    except IOError:
-        font = ImageFont.load_default()
-
+    font = get_font(65)
     color = (0, 0, 0)
     
     # Columns X coords
