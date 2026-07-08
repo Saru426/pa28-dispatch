@@ -402,8 +402,7 @@ keep_awake()
 
 if st.session_state.page == 'home':
     scroll_to_top()
-    st.title("Aircraft Takeoff and Landing Data & Weather Planning")
-    st.markdown("### Weight and Balance sheet for PA-28-161 using current metar.")
+    st.title("Print your Weight and Balance sheet using current METAR")
     st.markdown("---")
     
     with st.form("dispatch_form"):
