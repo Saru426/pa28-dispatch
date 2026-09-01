@@ -224,7 +224,6 @@ def cg_is_within_limits(takeoff_weight, cg, ac_type):
         fwd, aft = limits[1], limits[2]
         return fwd, aft, fwd <= cg <= aft
     else:
-        # Pilot 100i Envelope Logic
         aft_limit = 93.0
         if takeoff_weight <= 2050:
             fwd_limit = 82.0
@@ -233,91 +232,93 @@ def cg_is_within_limits(takeoff_weight, cg, ac_type):
         is_within = fwd_limit <= cg <= aft_limit and takeoff_weight <= 2558
         return round(fwd_limit, 2), aft_limit, is_within
 
-# --- WARRIOR III EMPIRICAL PERFORMANCE ENGINES ---
-def calc_warrior_flaps_0_ground_roll(weight, temp, headwind):
+# --- EMPIRICAL PERFORMANCE ENGINES (Warrior III) ---
+def calc_flaps_0_ground_roll_warrior(weight, temp, headwind):
     base_2400 = (0.0205 * (temp ** 2)) + (18.8268 * temp) + 782.8214
     weight_ratio = (0.0000004932 * (weight ** 2)) - (0.001232 * weight) + 1.1184
     base_dist = base_2400 * weight_ratio
     wind_slope = (-0.0135 * base_dist) - 2.1047
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_warrior_flaps_25_ground_roll(weight, temp, headwind):
+def calc_flaps_25_ground_roll_warrior(weight, temp, headwind):
     base_2400 = (0.0080 * (temp ** 2)) + (13.7589 * temp) + 799.4643
     weight_ratio = (0.0000002787 * (weight ** 2)) - (0.0004820 * weight) + 0.5508
     base_dist = base_2400 * weight_ratio
     wind_slope = (-0.0107 * base_dist) - 5.0694
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_warrior_flaps_0_obstacle(weight, temp, headwind):
+def calc_flaps_0_obstacle_warrior(weight, temp, headwind):
     base_2400 = (0.0018 * (temp ** 2)) + (24.3607 * temp) + 1569.5000
     weight_ratio = (0.0000002759 * (weight ** 2)) - (0.0002545 * weight) + 0.0235
     base_dist = base_2400 * weight_ratio
     wind_slope = (-0.0107 * base_dist) - 5.3652
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_warrior_flaps_25_obstacle(weight, temp, headwind):
+def calc_flaps_25_obstacle_warrior(weight, temp, headwind):
     base_2400 = (-0.0500 * (temp ** 2)) + (25.4000 * temp) + 1254.0000
     weight_ratio = (0.0000001896 * (weight ** 2)) - (0.00007642 * weight) + 0.0883
     base_dist = base_2400 * weight_ratio
     wind_slope = (-0.0109 * base_dist) - 4.7111
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_warrior_landing_ground_roll(weight, temp, headwind):
+def calc_landing_ground_roll_warrior(weight, temp, headwind):
     base_2400 = (0.0046 * (temp ** 2)) + (1.8721 * temp) + 583.1857
     weight_ratio = (0.0000000176 * (weight ** 2)) + (0.0003462 * weight) + 0.0668
     base_dist = base_2400 * weight_ratio
     wind_slope = (-0.0129 * base_dist) - 3.5358
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_warrior_landing_obstacle(weight, temp, headwind):
+def calc_landing_obstacle_warrior(weight, temp, headwind):
     base_2400 = (2.8714 * temp) + 1094.4286
     weight_ratio = (-0.0000000392 * (weight ** 2)) + (0.0005736 * weight) - 0.1512
     base_dist = base_2400 * weight_ratio
     wind_slope = (-0.0047 * base_dist) - 11.6423
     return max(0, base_dist + (headwind * wind_slope))
 
-# --- PILOT 100I EMPIRICAL PERFORMANCE ENGINES ---
-def calc_100i_flaps_0_ground_roll(weight, temp, headwind):
+
+# --- EMPIRICAL PERFORMANCE ENGINES (Pilot 100i) ---
+def calc_flaps_0_ground_roll_100i(weight, temp, headwind):
     base_2550 = (0.0375 * (temp ** 2)) + (9.5 * temp) + 915.0
     weight_ratio = (0.0000000067 * (weight ** 2)) + (0.0007405 * weight) - 0.9320
     base_dist = base_2550 * weight_ratio
     wind_slope = -0.0143 * base_dist
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_100i_flaps_0_obstacle(weight, temp, headwind):
-    base_2550 = (0.075 * (temp ** 2)) + (17.0 * temp) + 1730.0
-    weight_ratio = (0.00000038 * (weight ** 2)) - (0.00094 * weight) + 1.15
-    base_dist = base_2550 * weight_ratio
-    wind_slope = -0.0105 * base_dist
-    return max(0, base_dist + (headwind * wind_slope))
-
-def calc_100i_flaps_25_ground_roll(weight, temp, headwind):
+def calc_flaps_25_ground_roll_100i(weight, temp, headwind):
     base_2550 = (0.0375 * (temp ** 2)) + (10.25 * temp) + 975.0
     weight_ratio = (0.000000638 * (weight ** 2)) - (0.002054 * weight) + 2.089
     base_dist = base_2550 * weight_ratio
     wind_slope = -0.0150 * base_dist
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_100i_flaps_25_obstacle(weight, temp, headwind):
+def calc_flaps_0_obstacle_100i(weight, temp, headwind):
+    base_2550 = (0.075 * (temp ** 2)) + (17.0 * temp) + 1730.0
+    weight_ratio = (0.00000038 * (weight ** 2)) - (0.00094 * weight) + 1.15
+    base_dist = base_2550 * weight_ratio
+    wind_slope = -0.0105 * base_dist
+    return max(0, base_dist + (headwind * wind_slope))
+
+def calc_flaps_25_obstacle_100i(weight, temp, headwind):
     base_2550 = (0.05 * (temp ** 2)) + (14.0 * temp) + 1390.0
     weight_ratio = (0.00000002 * (weight ** 2)) + (0.00071 * weight) - 0.94
     base_dist = base_2550 * weight_ratio
     wind_slope = -0.0126 * base_dist
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_100i_landing_ground_roll(weight, temp, headwind):
+def calc_landing_ground_roll_100i(weight, temp, headwind):
     base_2550 = (3.375 * temp) + 865.0
     weight_ratio = (0.00037 * weight) + 0.057
     base_dist = base_2550 * weight_ratio
     wind_slope = -0.0161 * base_dist
     return max(0, base_dist + (headwind * wind_slope))
 
-def calc_100i_landing_obstacle(weight, temp, headwind):
+def calc_landing_obstacle_100i(weight, temp, headwind):
     base_2550 = (3.25 * temp) + 1352.5
     weight_ratio = (0.000199 * weight) + 0.4925
     base_dist = base_2550 * weight_ratio
     wind_slope = -0.0134 * base_dist
     return max(0, base_dist + (headwind * wind_slope))
+
 
 # --- FONT LOADER ---
 def get_font(size):
@@ -335,7 +336,11 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
         return None
 
     draw = ImageDraw.Draw(img)
-    font = get_font(65)
+    try:
+        font = ImageFont.truetype("Arial.ttf", size=65)
+    except IOError:
+        font = ImageFont.load_default()
+
     color = (0, 0, 0)
     
     # Columns X coords
@@ -364,11 +369,11 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
     write(x_mom, 743, wb_data['pax_mom'], ".0f")
 
     write(x_wt, 822, wb_data['bag_wt'], ".1f")
-    write(x_arm, 822, wb_data['bag_arm'], ".1f")
+    write(x_arm, 822, wb_data['bag_arm'], ".2f")
     write(x_mom, 822, wb_data['bag_mom'], ".0f")
 
     write(x_wt, 901, wb_data['fuel_wt'], ".1f")
-    write(x_arm, 901, wb_data['fuel_arm'], ".1f")
+    write(x_arm, 901, wb_data['fuel_arm'], ".2f")
     write(x_mom, 901, wb_data['fuel_mom'], ".0f")
 
     write(x_wt, 980, wb_data['ramp_wt'], ".1f")
@@ -376,7 +381,7 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
     write(x_mom, 980, wb_data['ramp_mom'], ".0f")
 
     write(x_wt, 1059, wb_data['taxi_wt'], ".1f")
-    write(x_arm, 1059, wb_data['taxi_arm'], ".1f")
+    write(x_arm, 1059, wb_data['taxi_arm'], ".2f")
     write(x_mom, 1059, wb_data['taxi_mom'], ".0f")
 
     write(x_wt, 1206, wb_data['to_wt'], ".1f")
@@ -384,7 +389,7 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
     write(x_mom, 1206, wb_data['to_mom'], ".0f")
 
     write(x_wt, 1292, wb_data['burn_wt'], ".1f")
-    write(x_arm, 1292, wb_data['burn_arm'], ".1f")
+    write(x_arm, 1292, wb_data['burn_arm'], ".2f")
     write(x_mom, 1292, wb_data['burn_mom'], ".0f")
 
     write(x_wt, 1444, wb_data['ld_wt'], ".1f")
@@ -397,8 +402,8 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
     write(1761, 2382, perf_data['obs_0'], ".0f")
     write(1980, 2382, perf_data['obs_25'], ".0f")
     
-    draw.text((1127, 2486), "79", fill=color, font=font, anchor="mm")
-    
+    write(1127, 2486, perf_data['Vy'], ".0f")
+
     write(1127, 2790, perf_data['land_roll'], ".0f")
     write(1876, 2790, perf_data['land_obs'], ".0f")
 
@@ -409,40 +414,31 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
     
     draw.text((1541, 3077), rwy_text, fill=color, font=font, anchor="mm")
     
-    # NEW LAYOUT FOR NOTES (Starting at X=2300)
     base_x = 2300
     current_y = 530
     
-    # 1. Print title outside the box
     draw.text((base_x, current_y), "Current METAR:", fill=color, font=font, anchor="lm")
     current_y += 80
     
-    # 2. Setup the METAR wrapping
     wrapped_metar = textwrap.wrap(env_data['metar'], width=26)
     
-    # 3. Calculate bounding box ONLY for the wrapped METAR string
     box_x0 = base_x - 30
-    box_x1 = base_x + 950 # Enough width for the wrapped string
+    box_x1 = base_x + 950 
     box_y0 = current_y - 40
     box_y1 = current_y + (len(wrapped_metar) * 80) + 10
     
-    # Draw the rectangle
     draw.rectangle([box_x0, box_y0, box_x1, box_y1], outline=color, width=5)
     
-    # 4. Print the METAR inside the box
     for line in wrapped_metar:
         draw.text((base_x, current_y), line, fill=color, font=font, anchor="lm")
         current_y += 80
         
-    # Push Y-coordinate down past the box for the remaining elements
     current_y = box_y1 + 80
     
-    # 5. Wind components
     wind_comp_text = f"HW: {env_data['hw']:.1f} kts   |   XW: {env_data['xw']:.1f} kts at {rwy_str}"
     draw.text((base_x, current_y), wind_comp_text, fill=color, font=font, anchor="lm")
     current_y += 80
     
-    # 6. CG Limits Check
     _, _, to_ok = cg_is_within_limits(wb_data['to_wt'], wb_data['to_cg'], env_data['ac_type'])
     _, _, ld_ok = cg_is_within_limits(wb_data['ld_wt'], wb_data['ld_cg'], env_data['ac_type'])
     
@@ -452,7 +448,6 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
         draw.text((base_x, current_y), "WARNING: CG OUT OF LIMITS", fill=color, font=font, anchor="lm")
     current_y += 80
     
-    # 7. Distance Check vs Runway Length
     max_dist = max([
         perf_data['roll_0'], perf_data['obs_0'], 
         perf_data['roll_25'], perf_data['obs_25'], 
@@ -477,56 +472,59 @@ if st.session_state.page == 'home':
     st.title("Print your Weight and Balance sheet using current METAR")
     st.markdown("---")
     
-    with st.form("dispatch_form"):
-        # Aircraft Type Toggle
-        ac_type = st.radio("Select Aircraft Type:", ["Warrior III", "Pilot 100i"], horizontal=True)
-        active_fleet = WARRIOR_FLEET if ac_type == "Warrior III" else PILOT_100I_FLEET
+    # Step 1: Initial Selection (Warrior III or Pilot 100i)
+    ac_type_choice = st.radio("Select Aircraft Type:", ["Warrior III", "Pilot 100i"], horizontal=True)
+    st.markdown("---")
+    
+    active_fleet = WARRIOR_FLEET if ac_type_choice == "Warrior III" else PILOT_100I_FLEET
 
+    with st.form("dispatch_form"):
         col1, col2 = st.columns(2)
         with col1:
             ac_selected = st.selectbox("Select Aircraft:", list(active_fleet.keys()))
             student_weight = st.number_input("Student/Pilot weight (lbs):", min_value=50.0, max_value=400.0, value=160.0, step=10.0)
             
-            # Setup Instructor Dropdown
             ip_list = ["None"] + list(INSTRUCTORS.keys())
             selected_ip = st.selectbox("Instructor (Automatically adds Weight & Baggage):", ip_list)
             
         with col2:
             pax_weight = st.number_input("Aft Passengers weight (lbs) [0 if none]:", min_value=0.0, max_value=400.0, value=0.0, step=10.0)
             
-            if ac_type == "Warrior III":
+            if ac_type_choice == "Warrior III":
                 student_baggage = st.number_input("Student Baggage weight (lbs):", min_value=0.0, max_value=200.0, value=0.0, step=10.0)
             else:
                 student_baggage = 0.0
-                st.info("ℹ️ Pilot 100i configuration uses rear seat only (no baggage compartment).")
-
+                st.info("ℹ️ Piper 100i has no baggage area; Add your baggage weight to Aft Passenger weight.")
+                
             lesson_hours = st.number_input("Est. flight duration (hours):", min_value=0.5, max_value=6.0, value=1.5, step=0.1)
         
         submit_button = st.form_submit_button("Calculate & Generate Sheet", type="primary")
         
         if submit_button:
-            st.session_state.ac_type = ac_type
+            st.session_state.ac_type = ac_type_choice
             st.session_state.ew = active_fleet[ac_selected]["W"]
             st.session_state.ea = active_fleet[ac_selected]["A"]
             st.session_state.em = active_fleet[ac_selected]["M"]
-            st.session_state.ac_reg = ac_selected.split(" - ")[0] # Extracts just the N-Number
+            st.session_state.ac_reg = ac_selected.split(" - ")[0]
 
-            # Process Instructor Additions
             if selected_ip != "None":
                 ip_wt = float(INSTRUCTORS[selected_ip]["wt"])
-                ip_bag = float(INSTRUCTORS[selected_ip]["bag"]) if ac_type == "Warrior III" else 0.0
+                ip_bag = float(INSTRUCTORS[selected_ip]["bag"])
             else:
                 ip_wt = 0.0
                 ip_bag = 0.0
                 
-            st.session_state.pw = student_weight + ip_wt # Combined Front Seat Weight
+            st.session_state.pw = student_weight + ip_wt
             st.session_state.pax = pax_weight
             
-            if ac_type == "Warrior III":
+            if ac_type_choice == "Warrior III":
                 total_baggage = student_baggage + ip_bag
                 st.session_state.bw = min(200.0, total_baggage)
             else:
+                # For 100i, instructor bag weight rolls into rear passenger / structural weight handling if needed, or set to 0 per specs
                 st.session_state.bw = 0.0
+                # If instructor has bag weight in 100i, add it to pax or handle cleanly:
+                st.session_state.pax += ip_bag
             
             st.session_state.lh = lesson_hours
             st.session_state.page = 'results'
@@ -541,13 +539,12 @@ elif st.session_state.page == 'results':
     empty_arm = st.session_state.ea
     pilot_arm = 80.5
     pax_arm = 118.1
-    baggage_arm = 142.8
+    baggage_arm = 142.8 if st.session_state.ac_type == "Warrior III" else 0
     fuel_arm = 95.0
 
     front_seat_wt = st.session_state.pw 
     fuel_wt = 288.0 
     
-    # Dynamic Taxi Burn based on aircraft type
     if st.session_state.ac_type == "Warrior III":
         taxi_wt = -7.0
     else:
@@ -618,23 +615,25 @@ elif st.session_state.page == 'results':
         perf_dict = {}
         try:
             if st.session_state.ac_type == "Warrior III":
-                perf_dict['roll_0'] = calc_warrior_flaps_0_ground_roll(to_wt, temp, best_hw)
-                perf_dict['obs_0'] = calc_warrior_flaps_0_obstacle(to_wt, temp, best_hw)
-                perf_dict['roll_25'] = calc_warrior_flaps_25_ground_roll(to_wt, temp, best_hw)
-                perf_dict['obs_25'] = calc_warrior_flaps_25_obstacle(to_wt, temp, best_hw)
-                perf_dict['land_roll'] = calc_warrior_landing_ground_roll(ld_wt, temp, best_hw)
-                perf_dict['land_obs'] = calc_warrior_landing_obstacle(ld_wt, temp, best_hw)
+                perf_dict['roll_0'] = calc_flaps_0_ground_roll_warrior(to_wt, temp, best_hw)
+                perf_dict['obs_0'] = calc_flaps_0_obstacle_warrior(to_wt, temp, best_hw)
+                perf_dict['roll_25'] = calc_flaps_25_ground_roll_warrior(to_wt, temp, best_hw)
+                perf_dict['obs_25'] = calc_flaps_25_obstacle_warrior(to_wt, temp, best_hw)
+                perf_dict['land_roll'] = calc_landing_ground_roll_warrior(ld_wt, temp, best_hw)
+                perf_dict['land_obs'] = calc_landing_obstacle_warrior(ld_wt, temp, best_hw)
             else:
-                perf_dict['roll_0'] = calc_100i_flaps_0_ground_roll(to_wt, temp, best_hw)
-                perf_dict['obs_0'] = calc_100i_flaps_0_obstacle(to_wt, temp, best_hw)
-                perf_dict['roll_25'] = calc_100i_flaps_25_ground_roll(to_wt, temp, best_hw)
-                perf_dict['obs_25'] = calc_100i_flaps_25_obstacle(to_wt, temp, best_hw)
-                perf_dict['land_roll'] = calc_100i_landing_ground_roll(ld_wt, temp, best_hw)
-                perf_dict['land_obs'] = calc_100i_landing_obstacle(ld_wt, temp, best_hw)
+                perf_dict['roll_0'] = calc_flaps_0_ground_roll_100i(to_wt, temp, best_hw)
+                perf_dict['obs_0'] = calc_flaps_0_obstacle_100i(to_wt, temp, best_hw)
+                perf_dict['roll_25'] = calc_flaps_25_ground_roll_100i(to_wt, temp, best_hw)
+                perf_dict['obs_25'] = calc_flaps_25_obstacle_100i(to_wt, temp, best_hw)
+                perf_dict['land_roll'] = calc_landing_ground_roll_100i(ld_wt, temp, best_hw)
+                perf_dict['land_obs'] = calc_landing_obstacle_100i(ld_wt, temp, best_hw)
         except Exception as e:
             st.error(f"⚠️ Performance calculation error: {e}")
 
-        # --- VISUAL RENDERING (Clean Output without text sidebar) ---
+        perf_dict['Vy'] = 79 if st.session_state.ac_type == "Warrior III" else 76
+
+        # --- VISUAL RENDERING ---
         col_left, col_mid, col_right = st.columns([1, 4, 1])
         
         with col_mid:
@@ -647,13 +646,12 @@ elif st.session_state.page == 'results':
                 final_img.convert('RGB').save(buf, format="PDF")
                 byte_im = buf.getvalue()
                 
-                # Action Buttons
                 btn_col1, btn_col2 = st.columns(2)
                 with btn_col1:
                     st.download_button(
                         label="📄 Download Ready Sheet (PDF)",
                         data=byte_im,
-                        file_name="pa28_dispatch_sheet.pdf",
+                        file_name=f"{st.session_state.ac_type.lower().replace(' ', '_')}_dispatch_sheet.pdf",
                         mime="application/pdf",
                         use_container_width=True
                     )
