@@ -336,11 +336,7 @@ def generate_dispatch_sheet(wb_data, perf_data, env_data):
         return None
 
     draw = ImageDraw.Draw(img)
-    try:
-        font = ImageFont.truetype("Arial.ttf", size=65)
-    except IOError:
-        font = ImageFont.load_default()
-
+    font = get_font(65)
     color = (0, 0, 0)
     
     # Columns X coords
